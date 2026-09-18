@@ -203,28 +203,51 @@ window.TripSync.timeline = {
     
     let html = '';
     
-    // 1. Gather all flights (from trip.flights + itinerary flight items)
-    const flightsList = [...(trip.flights || [])];
-    const seenFlightTitles = new Set(flightsList.map(f => `${f.dep_airport}_${f.arr_airport}_${f.dep_datetime}`));
+    // 1. Gather all flights with intelligent deduplication
+    const flightMap = new Map();
+    (trip.flights || []).forEach(f => {
+      if (!f) return;
+      const dep = (f.dep_airport || f.departure_airport || '').trim();
+      const arr = (f.arr_airport || f.arrival_airport || '').trim();
+      const fNo = (f.flight_no || '').trim();
+      const depDate = f.dep_datetime ? String(f.dep_datetime).split(' ')[0].split('T')[0] : '';
+      const key = `${dep.toLowerCase()}_${arr.toLowerCase()}_${depDate}_${fNo.toLowerCase()}`;
+      if (!flightMap.has(key)) {
+        flightMap.set(key, { ...f });
+      }
+    });
     
     (trip.itinerary || []).forEach(item => {
-      if (item.category === 'flight') {
-        const key = `${item.title}_${item.date}_${item.start_time}`;
-        if (!seenFlightTitles.has(key)) {
-          seenFlightTitles.add(key);
-          flightsList.push({
+      if (item.category === 'flight' && item.title) {
+        const title = item.title.trim();
+        const itemDate = item.date ? String(item.date).split('T')[0] : '';
+        // Check if matching flight already exists
+        let exists = false;
+        for (const [k, f] of flightMap.entries()) {
+          const fDep = (f.dep_airport || '').trim().toLowerCase();
+          const fDate = f.dep_datetime ? String(f.dep_datetime).split(' ')[0].split('T')[0] : '';
+          if ((fDep.includes(title.toLowerCase()) || title.toLowerCase().includes(fDep)) && fDate === itemDate) {
+            exists = true;
+            if (!f.booking_ref && item.booking_link) f.booking_ref = item.booking_link;
+            break;
+          }
+        }
+        if (!exists) {
+          const key = `itin_${title.toLowerCase()}_${itemDate}`;
+          flightMap.set(key, {
             dep_airport: item.title,
             arr_airport: '',
             airline: item.notes || '',
             flight_no: '',
-            dep_datetime: `${item.date} ${item.start_time}`,
-            arr_datetime: `${item.date} ${item.end_time}`,
+            dep_datetime: `${item.date || ''} ${item.start_time || ''}`.trim(),
+            arr_datetime: `${item.date || ''} ${item.end_time || ''}`.trim(),
             booking_ref: item.booking_link || ''
           });
         }
       }
     });
 
+    const flightsList = Array.from(flightMap.values());
     if (flightsList.length > 0) {
       html += '<div class="summary-card flights-summary" style="background:#fff; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06);"><h4 style="margin-bottom:14px; color:#2d3748; font-size:1.1rem; display:flex; align-items:center; gap:8px;">✈️ 항공편 정보</h4><ul style="list-style:none; padding:0; margin:0;">';
       flightsList.forEach(f => {
@@ -246,30 +269,71 @@ window.TripSync.timeline = {
       html += '</ul></div>';
     }
     
-    // 2. Gather all accommodations (from trip.accommodations + itinerary accommodation items)
-    const accomList = [...(trip.accommodations || [])];
-    const seenAccomNames = new Set(accomList.map(a => `${a.name}_${a.check_in}`));
+    // 2. Gather all accommodations with intelligent deduplication by hotel name
+    const accomMap = new Map();
     
+    // Helper to extract clean hotel name key
+    const getHotelKey = (name) => {
+      if (!name) return '';
+      return name.trim().toLowerCase().replace(/체크인|체크아웃|check-in|check-out/gi, '').trim();
+    };
+
+    // First, process trip.accommodations
+    (trip.accommodations || []).forEach(a => {
+      if (!a || !a.name) return;
+      const key = getHotelKey(a.name);
+      if (!key) return;
+      
+      if (!accomMap.has(key)) {
+        accomMap.set(key, { ...a });
+      } else {
+        const existing = accomMap.get(key);
+        if (!existing.check_in && a.check_in) existing.check_in = a.check_in;
+        if (!existing.check_out && a.check_out) existing.check_out = a.check_out;
+        if (!existing.address && a.address) existing.address = a.address;
+        if (!existing.google_maps_link && a.google_maps_link) existing.google_maps_link = a.google_maps_link;
+        if (!existing.lat && a.lat) { existing.lat = a.lat; existing.lng = a.lng; }
+        if (!existing.booking_link && a.booking_link) existing.booking_link = a.booking_link;
+      }
+    });
+    
+    // Second, process itinerary items with category === 'accommodation'
     (trip.itinerary || []).forEach(item => {
-      if (item.category === 'accommodation') {
-        const key = `${item.title}_${item.date}`;
-        if (!seenAccomNames.has(key)) {
-          seenAccomNames.add(key);
-          accomList.push({
+      if (item.category === 'accommodation' && item.title) {
+        const key = getHotelKey(item.title);
+        if (!key) return;
+        
+        const checkInTime = `${item.date || ''} ${item.start_time || ''}`.trim();
+        const checkOutTime = (item.date && item.end_time) ? `${item.date} ${item.end_time}`.trim() : '';
+
+        if (!accomMap.has(key)) {
+          accomMap.set(key, {
             name: item.title,
-            check_in: `${item.date} ${item.start_time}`,
-            check_out: `${item.date} ${item.end_time}`,
-            address: item.address || item.description || '',
+            check_in: checkInTime,
+            check_out: checkOutTime,
+            address: item.address || item.google_maps_link || item.description || '',
+            google_maps_link: item.google_maps_link || '',
             lat: item.lat,
             lng: item.lng,
             booking_link: item.booking_link || '',
             phone: '',
             notes: item.notes || item.description || ''
           });
+        } else {
+          // Already registered: merge any missing info
+          const existing = accomMap.get(key);
+          if (!existing.check_in && checkInTime) existing.check_in = checkInTime;
+          if (!existing.check_out && checkOutTime) existing.check_out = checkOutTime;
+          if (!existing.address && item.address) existing.address = item.address;
+          if (!existing.google_maps_link && item.google_maps_link) existing.google_maps_link = item.google_maps_link;
+          if (!existing.lat && item.lat) { existing.lat = item.lat; existing.lng = item.lng; }
+          if (!existing.booking_link && item.booking_link) existing.booking_link = item.booking_link;
+          if (!existing.notes && (item.notes || item.description)) existing.notes = item.notes || item.description;
         }
       }
     });
 
+    const accomList = Array.from(accomMap.values());
     if (accomList.length > 0) {
       html += '<div class="summary-card accom-summary" style="background:#fff; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06);"><h4 style="margin-bottom:14px; color:#2d3748; font-size:1.1rem; display:flex; align-items:center; gap:8px;">🏨 숙소 정보</h4><ul style="list-style:none; padding:0; margin:0;">';
       accomList.forEach(a => {
@@ -277,7 +341,7 @@ window.TripSync.timeline = {
           <li style="padding: 14px 0; border-bottom: 1px solid #edf2f7;">
             <strong style="font-size: 1.05rem; color: #2d3748;">${a.name}</strong><br>
             <span style="font-size: 0.85rem; color: #718096; display:inline-block; margin-top:4px;">체크인: ${a.check_in || '-'} ${a.check_out ? `| 체크아웃: ${a.check_out}` : ''}</span><br>
-            ${a.address ? `<span style="font-size:0.85rem; color:#4a5568; display:inline-block; margin-top:4px;">📍 ${a.lat && a.lng ? `<a href="#" style="color:#4A90D9; text-decoration:none;" onclick="TripSync.map.openInMaps(${a.lat}, ${a.lng}, '${a.name}'); return false;">${a.address} (지도보기)</a>` : a.address}</span><br>` : ''}
+            ${(a.address || a.google_maps_link) ? `<span style="font-size:0.85rem; color:#4a5568; display:inline-block; margin-top:4px;">📍 ${a.lat && a.lng ? `<a href="#" style="color:#4A90D9; text-decoration:none;" onclick="TripSync.map.openInMaps(${a.lat}, ${a.lng}, '${a.name.replace(/'/g, "\\'")}'); return false;">${a.address || '지도에서 위치 보기'} (지도보기)</a>` : (a.google_maps_link ? `<a href="${a.google_maps_link}" target="_blank" rel="noopener" style="color:#4A90D9; text-decoration:none;">${a.address || '구글 지도 링크 열기 ↗'}</a>` : a.address)}</span><br>` : ''}
             ${a.phone ? `<span style="font-size:0.8rem; color:#718096;">📞 전화: ${a.phone}</span><br>` : ''}
             ${a.booking_link ? `<span style="font-size:0.8rem;"><a href="${a.booking_link}" target="_blank" rel="noopener" style="color:#4A90D9;">예약 페이지 바로가기 ↗</a></span>` : ''}
           </li>

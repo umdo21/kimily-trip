@@ -46,10 +46,19 @@ function normalizeTrip(trip) {
     });
   }
   if (Array.isArray(trip.accommodations)) {
+    const seen = new Set();
+    const cleanAccom = [];
     trip.accommodations.forEach(a => {
+      if (!a || !a.name) return;
       if (a.check_in && a.check_in.includes('T')) a.check_in = normalizeDateStr(a.check_in);
       if (a.check_out && a.check_out.includes('T')) a.check_out = normalizeDateStr(a.check_out);
+      const nameKey = (a.name || '').trim().toLowerCase();
+      if (!seen.has(nameKey)) {
+        seen.add(nameKey);
+        cleanAccom.push(a);
+      }
     });
+    trip.accommodations = cleanAccom;
   }
   return trip;
 }
