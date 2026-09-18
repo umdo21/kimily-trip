@@ -95,7 +95,7 @@ function addItineraryItem(params) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('itinerary');
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   
-  var newId = "itm_" + new Date().getTime();
+  var newId = params.id || ("itm_" + new Date().getTime());
   var newRow = [];
   var itemData = {};
   
@@ -112,7 +112,120 @@ function addItineraryItem(params) {
   }
   
   sheet.appendRow(newRow);
+
+  // 숙소(accommodation) 카테고리인 경우 accommodations 시트에도 동기화
+  if (params.category === 'accommodation') {
+    try {
+      syncAccommodationFromItem(params);
+    } catch(err) {
+      Logger.log("Failed to sync accommodation: " + err.message);
+    }
+  }
+
+  // 항공(flight) 카테고리인 경우 flights 시트에도 동기화
+  if (params.category === 'flight') {
+    try {
+      syncFlightFromItem(params);
+    } catch(err) {
+      Logger.log("Failed to sync flight: " + err.message);
+    }
+  }
+
   return { "success": true, "item": itemData };
+}
+
+/**
+ * 일정 항목에서 accommodations 시트로 숙소 자동 동기화
+ */
+function syncAccommodationFromItem(params) {
+  var accomSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('accommodations');
+  if (!accomSheet) return;
+  
+  var tripId = params.trip_id;
+  var hotelName = params.title || "";
+  if (!tripId || !hotelName) return;
+  
+  // 이미 동일한 trip_id와 동일한 이름의 숙소가 있는지 중복 검사
+  var lastRow = accomSheet.getLastRow();
+  if (lastRow > 1) {
+    var data = accomSheet.getDataRange().getValues();
+    var headers = data[0];
+    var tripIdIdx = headers.indexOf('trip_id');
+    var nameIdx = headers.indexOf('name');
+    for (var r = 1; r < data.length; r++) {
+      if (String(data[r][tripIdIdx]) === String(tripId) && String(data[r][nameIdx]) === String(hotelName)) {
+        return; // 이미 등록된 숙소면 중복 등록 방지
+      }
+    }
+  }
+  
+  var headers = accomSheet.getRange(1, 1, 1, accomSheet.getLastColumn()).getValues()[0];
+  var checkIn = params.date ? (params.start_time ? (params.date + " " + params.start_time) : params.date) : "";
+  var checkOut = params.date ? (params.end_time ? (params.date + " " + params.end_time) : "") : "";
+  
+  var newRow = [];
+  for (var i = 0; i < headers.length; i++) {
+    var col = headers[i];
+    var val = "";
+    if (col === 'trip_id') val = tripId;
+    else if (col === 'name') val = hotelName;
+    else if (col === 'check_in') val = checkIn;
+    else if (col === 'check_out') val = checkOut;
+    else if (col === 'address') val = params.address || params.description || "";
+    else if (col === 'google_maps_link') val = params.google_maps_link || "";
+    else if (col === 'lat') val = params.lat || "";
+    else if (col === 'lng') val = params.lng || "";
+    else if (col === 'booking_link') val = params.booking_link || "";
+    else if (col === 'phone') val = params.phone || "";
+    else if (col === 'notes') val = params.notes || params.description || "";
+    newRow.push(val);
+  }
+  
+  accomSheet.appendRow(newRow);
+}
+
+/**
+ * 일정 항목에서 flights 시트로 항공 자동 동기화
+ */
+function syncFlightFromItem(params) {
+  var flightSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('flights');
+  if (!flightSheet) return;
+  
+  var tripId = params.trip_id;
+  var title = params.title || "";
+  if (!tripId || !title) return;
+  
+  var lastRow = flightSheet.getLastRow();
+  if (lastRow > 1) {
+    var data = flightSheet.getDataRange().getValues();
+    var headers = data[0];
+    var tripIdIdx = headers.indexOf('trip_id');
+    var depIdx = headers.indexOf('dep_airport');
+    for (var r = 1; r < data.length; r++) {
+      if (String(data[r][tripIdIdx]) === String(tripId) && String(data[r][depIdx]) === String(title)) {
+        return; // 이미 등록된 항공편이면 중복 방지
+      }
+    }
+  }
+  
+  var headers = flightSheet.getRange(1, 1, 1, flightSheet.getLastColumn()).getValues()[0];
+  var depTime = params.date ? (params.start_time ? (params.date + " " + params.start_time) : params.date) : "";
+  var arrTime = params.date ? (params.end_time ? (params.date + " " + params.end_time) : "") : "";
+  
+  var newRow = [];
+  for (var i = 0; i < headers.length; i++) {
+    var col = headers[i];
+    var val = "";
+    if (col === 'trip_id') val = tripId;
+    else if (col === 'dep_airport') val = title;
+    else if (col === 'dep_datetime') val = depTime;
+    else if (col === 'arr_datetime') val = arrTime;
+    else if (col === 'booking_link') val = params.booking_link || "";
+    else if (col === 'notes') val = params.notes || params.description || "";
+    newRow.push(val);
+  }
+  
+  flightSheet.appendRow(newRow);
 }
 
 /**

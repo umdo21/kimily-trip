@@ -498,6 +498,45 @@ window.TripSync.api = {
       if (!alreadyExists) {
         trip.itinerary.push(item);
       }
+
+      // Automatically sync to accommodations list if category is accommodation
+      if (item.category === 'accommodation') {
+        if (!trip.accommodations) trip.accommodations = [];
+        const accomExists = trip.accommodations.some(a => a.name === item.title);
+        if (!accomExists) {
+          trip.accommodations.push({
+            trip_id: item.trip_id,
+            name: item.title,
+            check_in: item.date ? (item.start_time ? `${item.date} ${item.start_time}` : item.date) : '',
+            check_out: item.date ? (item.end_time ? `${item.date} ${item.end_time}` : '') : '',
+            address: item.address || item.description || '',
+            google_maps_link: item.google_maps_link || '',
+            lat: item.lat,
+            lng: item.lng,
+            booking_link: item.booking_link || '',
+            phone: '',
+            notes: item.notes || item.description || ''
+          });
+        }
+      }
+
+      // Automatically sync to flights list if category is flight
+      if (item.category === 'flight') {
+        if (!trip.flights) trip.flights = [];
+        const flightExists = trip.flights.some(f => f.dep_airport === item.title);
+        if (!flightExists) {
+          trip.flights.push({
+            trip_id: item.trip_id,
+            direction: 'outbound',
+            dep_airport: item.title,
+            arr_airport: '',
+            dep_datetime: item.date ? (item.start_time ? `${item.date} ${item.start_time}` : item.date) : '',
+            arr_datetime: item.date ? (item.end_time ? `${item.date} ${item.end_time}` : '') : '',
+            booking_link: item.booking_link || '',
+            notes: item.notes || item.description || ''
+          });
+        }
+      }
       
       const tripId = (trip.info && trip.info.trip_id) || window.TripSync.state.currentTripId;
       if (tripId) this.setCachedTrip(tripId, trip);
