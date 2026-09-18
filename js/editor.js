@@ -613,6 +613,226 @@ window.TripSync.editor = {
     };
   },
 
+  showEditModal(itemId) {
+    const item = this._getItem(itemId);
+    if (!item) return;
+
+    const trip = window.TripSync.state.currentTrip;
+    const currencyUnit = (trip && trip.info && trip.info.currency === 'JPY') ? '엔' : '원';
+
+    const categories = [
+      { val: 'restaurant', label: '🍽️ 식사 / 맛집' },
+      { val: 'attraction', label: '🏛️ 관광지 / 명소' },
+      { val: 'cafe', label: '☕ 카페 / 디저트' },
+      { val: 'shopping', label: '🛍️ 쇼핑' },
+      { val: 'transport', label: '🚅 이동 / 교통' },
+      { val: 'accommodation', label: '🏨 숙소 / 호텔' },
+      { val: 'flight', label: '✈️ 항공편' },
+      { val: 'free', label: '⭐ 자유 일정' }
+    ];
+
+    const categoryOptions = categories.map(cat => 
+      `<option value="${cat.val}" ${item.category === cat.val ? 'selected' : ''}>${cat.label}</option>`
+    ).join('');
+
+    const html = `
+      <div class="editor-modal">
+        <h3 style="font-size:1.25rem; font-weight:800; color:#0F172A; margin-bottom:4px;">✏️ 일정 세부 정보 수정</h3>
+        <p style="font-size:0.85rem; color:#64748B; margin-bottom:14px;"><strong>${item.icon || '📍'} ${item.title}</strong> 일정을 수정합니다.</p>
+
+        <!-- Smart Auto Input Box -->
+        <div class="smart-input-box" style="margin-bottom:16px;">
+          <div class="smart-input-header">
+            <span class="smart-icon">⚡</span>
+            <strong>스마트 링크 자동 완성</strong>
+            <span class="smart-badge">구글맵 / 예약정보</span>
+          </div>
+          <div class="smart-input-row">
+            <input type="text" id="edit_smart_input" placeholder="새로운 구글맵 링크를 붙여넣으면 위치/좌표가 자동 분석됩니다" class="smart-text-input">
+            <button type="button" id="btn_edit_smart_parse" class="btn-smart-action">⚡ 분석</button>
+          </div>
+          <div id="edit_smart_feedback" class="smart-parse-feedback" style="display:none;"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div>
+            <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">날짜 *</label>
+            <input type="date" id="edit_date" value="${item.date || ''}" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+          </div>
+          <div>
+            <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">카테고리 *</label>
+            <select id="edit_category" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+              ${categoryOptions}
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div>
+            <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">시작 시간</label>
+            <input type="time" id="edit_start" value="${item.start_time || ''}" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+          </div>
+          <div>
+            <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">종료 시간</label>
+            <input type="time" id="edit_end" value="${item.end_time || ''}" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">장소 / 일정 이름 *</label>
+          <input type="text" id="edit_title" value="${(item.title || '').replace(/"/g, '&quot;')}" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">구글맵 링크 / 주소</label>
+          <input type="url" id="edit_link" value="${(item.google_maps_link || item.address || '').replace(/"/g, '&quot;')}" placeholder="https://maps.app.goo.gl/..." style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.9rem;">
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">예약 페이지 링크</label>
+          <input type="url" id="edit_booking_link" value="${(item.booking_link || '').replace(/"/g, '&quot;')}" placeholder="https://..." style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.9rem;">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div>
+            <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">예상 예산 (${currencyUnit})</label>
+            <input type="number" id="edit_budget" value="${item.budget || 0}" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+          </div>
+          <div>
+            <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">아이콘 이모지</label>
+            <input type="text" id="edit_icon" value="${item.icon || ''}" placeholder="예: 🏯, 🍜" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; text-align:center;">
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">메모 / 세부 정보</label>
+          <textarea id="edit_desc" rows="2" placeholder="예약번호, 찾아가는 길, 가족 팁 등" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.9rem; resize:vertical;">${item.description || item.notes || ''}</textarea>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <button class="btn-primary" id="btn_edit_confirm" style="flex:1; padding:13px; font-size:0.95rem; border-radius:10px;">수정 내용 저장</button>
+          <button class="btn-secondary" style="padding:13px 18px; font-size:0.95rem; border-radius:10px;" onclick="TripSync.hideModal()">취소</button>
+        </div>
+      </div>
+    `;
+
+    window.TripSync.showModal(html);
+
+    let editParsedLat = item.lat || null;
+    let editParsedLng = item.lng || null;
+
+    const smartInput = document.getElementById('edit_smart_input');
+    const smartFeedback = document.getElementById('edit_smart_feedback');
+
+    const doSmartParse = () => {
+      const val = smartInput.value;
+      if (!val) return;
+
+      const parsed = parseSmartInput(val);
+      if (parsed) {
+        if (parsed.title && !document.getElementById('edit_title').value) {
+          document.getElementById('edit_title').value = parsed.title;
+        }
+        if (parsed.google_maps_link) {
+          document.getElementById('edit_link').value = parsed.google_maps_link;
+        }
+        if (parsed.booking_link) {
+          document.getElementById('edit_booking_link').value = parsed.booking_link;
+        }
+        if (parsed.start_time) {
+          document.getElementById('edit_start').value = parsed.start_time;
+        }
+        if (parsed.end_time) {
+          document.getElementById('edit_end').value = parsed.end_time;
+        }
+        if (parsed.lat && parsed.lng) {
+          editParsedLat = parsed.lat;
+          editParsedLng = parsed.lng;
+        }
+        if (parsed.category) {
+          document.getElementById('edit_category').value = parsed.category;
+        }
+
+        smartFeedback.style.display = 'block';
+        smartFeedback.innerHTML = `✨ 분석 완료: <strong>${parsed.title || '새 장소'}</strong> ${parsed.lat ? `(위도: ${parsed.lat.toFixed(4)}, 경도: ${parsed.lng.toFixed(4)})` : ''}`;
+      }
+    };
+
+    document.getElementById('btn_edit_smart_parse').onclick = doSmartParse;
+    smartInput.addEventListener('paste', () => setTimeout(doSmartParse, 50));
+
+    document.getElementById('btn_edit_confirm').onclick = () => {
+      const title = document.getElementById('edit_title').value.trim();
+      if (!title) {
+        alert('장소 또는 일정 이름을 입력해주세요.');
+        return;
+      }
+
+      const date = document.getElementById('edit_date').value;
+      const category = document.getElementById('edit_category').value;
+      const start_time = document.getElementById('edit_start').value;
+      const end_time = document.getElementById('edit_end').value;
+      const google_maps_link = document.getElementById('edit_link').value.trim();
+      const booking_link = document.getElementById('edit_booking_link').value.trim();
+      const budget = parseInt(document.getElementById('edit_budget').value || 0, 10);
+      const icon = document.getElementById('edit_icon').value.trim();
+      const description = document.getElementById('edit_desc').value.trim();
+
+      const updates = {
+        title,
+        date,
+        category,
+        start_time,
+        end_time,
+        google_maps_link,
+        address: google_maps_link,
+        booking_link,
+        budget,
+        icon,
+        description,
+        notes: description
+      };
+
+      if (editParsedLat && editParsedLng) {
+        updates.lat = editParsedLat;
+        updates.lng = editParsedLng;
+      }
+
+      // 1. Memory update
+      Object.assign(item, updates);
+
+      // 2. Accommodations update if category is accommodation
+      if (category === 'accommodation' && trip && trip.accommodations) {
+        const accom = trip.accommodations.find(a => a.name === item.title || a.name === title);
+        if (accom) {
+          accom.name = title;
+          accom.check_in = `${date} ${start_time}`;
+          accom.check_out = end_time ? `${date} ${end_time}` : '';
+          accom.address = google_maps_link;
+          accom.google_maps_link = google_maps_link;
+          if (editParsedLat) accom.lat = editParsedLat;
+          if (editParsedLng) accom.lng = editParsedLng;
+          if (booking_link) accom.booking_link = booking_link;
+          accom.notes = description;
+        }
+      }
+
+      // 3. API update
+      if (typeof window.TripSync.api.updateItem === 'function') {
+        window.TripSync.api.updateItem(itemId, updates).catch(e => {
+          console.warn('Backend updateItem failed, saved locally:', e);
+        });
+      }
+
+      window.TripSync.hideModal();
+      window.TripSync.timeline.render();
+      if (window.TripSync.map && window.TripSync.map.render) {
+        window.TripSync.map.render();
+      }
+      window.TripSync.showToast('✅ 일정이 성공적으로 수정되었습니다!', 'success');
+    };
+  },
+
   initSortable() {
     const el = document.getElementById('timeline-section');
     if (!el) return;

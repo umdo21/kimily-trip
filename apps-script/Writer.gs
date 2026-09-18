@@ -73,6 +73,14 @@ function updateItineraryItem(params) {
   
   if (targetRowIdx === -1) throw new Error("해당 ID의 일정을 찾을 수 없습니다.");
   
+  var oldRow = values[targetRowIdx - 1];
+  var titleIdx = headers.indexOf('title');
+  var tripIdIdx = headers.indexOf('trip_id');
+  var catIdx = headers.indexOf('category');
+  var oldTitle = titleIdx !== -1 ? oldRow[titleIdx] : "";
+  var oldTripId = tripIdIdx !== -1 ? oldRow[tripIdIdx] : "";
+  var oldCategory = catIdx !== -1 ? oldRow[catIdx] : "";
+  
   var updatedData = {};
   
   // 전달된 파라미터 중 시트 헤더와 일치하는 열만 업데이트
@@ -85,7 +93,64 @@ function updateItineraryItem(params) {
   }
   
   updatedData.id = id;
+
+  // 숙소 정보 업데이트 동기화
+  if (params.category === 'accommodation' || oldCategory === 'accommodation') {
+    try {
+      syncAccommodationUpdate(params, oldTitle, oldTripId);
+    } catch(err) {
+      Logger.log("Failed to sync accommodation update: " + err.message);
+    }
+  }
+
   return { "success": true, "updated": updatedData };
+}
+
+/**
+ * 일정 항목 수정 시 accommodations 시트도 함께 업데이트
+ */
+function syncAccommodationUpdate(params, oldTitle, oldTripId) {
+  var accomSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('accommodations');
+  if (!accomSheet) return;
+
+  var lastRow = accomSheet.getLastRow();
+  if (lastRow <= 1) return;
+
+  var data = accomSheet.getDataRange().getValues();
+  var headers = data[0];
+  var tripIdIdx = headers.indexOf('trip_id');
+  var nameIdx = headers.indexOf('name');
+  var checkInIdx = headers.indexOf('check_in');
+  var checkOutIdx = headers.indexOf('check_out');
+  var addrIdx = headers.indexOf('address');
+  var mapIdx = headers.indexOf('google_maps_link');
+  var bookIdx = headers.indexOf('booking_link');
+  var notesIdx = headers.indexOf('notes');
+
+  var tripId = params.trip_id || oldTripId;
+  var searchName = oldTitle || params.title;
+
+  for (var r = 1; r < data.length; r++) {
+    var rowTripId = String(data[r][tripIdIdx]);
+    var rowName = String(data[r][nameIdx]);
+    if (rowTripId === String(tripId) && (rowName === String(searchName) || rowName === String(params.title))) {
+      var rowNum = r + 1;
+      if (params.title && nameIdx !== -1) accomSheet.getRange(rowNum, nameIdx + 1).setValue(params.title);
+      if (params.date && checkInIdx !== -1) {
+        var checkInVal = params.date + (params.start_time ? " " + params.start_time : "");
+        accomSheet.getRange(rowNum, checkInIdx + 1).setValue(checkInVal);
+      }
+      if (params.end_time && checkOutIdx !== -1) {
+        var checkOutVal = params.date + " " + params.end_time;
+        accomSheet.getRange(rowNum, checkOutIdx + 1).setValue(checkOutVal);
+      }
+      if (params.google_maps_link && mapIdx !== -1) accomSheet.getRange(rowNum, mapIdx + 1).setValue(params.google_maps_link);
+      if ((params.address || params.google_maps_link) && addrIdx !== -1) accomSheet.getRange(rowNum, addrIdx + 1).setValue(params.address || params.google_maps_link);
+      if (params.booking_link && bookIdx !== -1) accomSheet.getRange(rowNum, bookIdx + 1).setValue(params.booking_link);
+      if ((params.description || params.notes) && notesIdx !== -1) accomSheet.getRange(rowNum, notesIdx + 1).setValue(params.description || params.notes);
+      break;
+    }
+  }
 }
 
 /**

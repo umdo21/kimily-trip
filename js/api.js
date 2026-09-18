@@ -1,7 +1,60 @@
-window.TripSync = window.TripSync || {};
-window.KimilyTrip = window.TripSync;
+function normalizeDateStr(dateVal) {
+  if (!dateVal) return '';
+  if (typeof dateVal === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) return dateVal;
+    const d = new Date(dateVal);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+  return String(dateVal);
+}
+
+function normalizeTimeStr(timeVal) {
+  if (!timeVal) return '';
+  if (typeof timeVal === 'string') {
+    if (/^\d{1,2}:\d{2}$/.test(timeVal)) return timeVal;
+    const d = new Date(timeVal);
+    if (!isNaN(d.getTime())) {
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    }
+  }
+  return String(timeVal);
+}
+
+function normalizeTrip(trip) {
+  if (!trip) return trip;
+  if (trip.info) {
+    if (trip.info.start_date) trip.info.start_date = normalizeDateStr(trip.info.start_date);
+    if (trip.info.end_date) trip.info.end_date = normalizeDateStr(trip.info.end_date);
+  }
+  if (Array.isArray(trip.itinerary)) {
+    trip.itinerary.forEach(item => {
+      if (item.date) item.date = normalizeDateStr(item.date);
+      if (item.start_time) item.start_time = normalizeTimeStr(item.start_time);
+      if (item.end_time) item.end_time = normalizeTimeStr(item.end_time);
+      if (item.actual_start_time) item.actual_start_time = normalizeTimeStr(item.actual_start_time);
+      if (item.actual_end_time) item.actual_end_time = normalizeTimeStr(item.actual_end_time);
+    });
+  }
+  if (Array.isArray(trip.accommodations)) {
+    trip.accommodations.forEach(a => {
+      if (a.check_in && a.check_in.includes('T')) a.check_in = normalizeDateStr(a.check_in);
+      if (a.check_out && a.check_out.includes('T')) a.check_out = normalizeDateStr(a.check_out);
+    });
+  }
+  return trip;
+}
 
 window.TripSync.api = {
+  normalizeTrip,
+  normalizeDateStr,
+  normalizeTimeStr,
   // Local cache helpers (Stale-While-Revalidate pattern)
   getCachedTrips() {
     try {
@@ -99,12 +152,20 @@ window.TripSync.api = {
 
   async loadTrips() {
     // 1. Return cached trips immediately if available (0ms instant render)
-    const cached = this.getCachedTrips();
+    let cached = this.getCachedTrips();
     if (cached && cached.length > 0) {
+      cached.forEach(t => {
+        if (t.start_date) t.start_date = normalizeDateStr(t.start_date);
+        if (t.end_date) t.end_date = normalizeDateStr(t.end_date);
+      });
       // Refresh silently in background
       if (window.TripSync.config && window.TripSync.config.SCRIPT_URL) {
         this.request('trips').then(res => {
           if (res && res.trips && res.trips.length > 0) {
+            res.trips.forEach(t => {
+              if (t.start_date) t.start_date = normalizeDateStr(t.start_date);
+              if (t.end_date) t.end_date = normalizeDateStr(t.end_date);
+            });
             this.setCachedTrips(res.trips);
             window.TripSync.state.trips = res.trips;
             if (typeof window.populateTripSelector === 'function') {
@@ -121,6 +182,10 @@ window.TripSync.api = {
       try {
         const res = await this.request('trips');
         if (res && res.trips && res.trips.length > 0) {
+          res.trips.forEach(t => {
+            if (t.start_date) t.start_date = normalizeDateStr(t.start_date);
+            if (t.end_date) t.end_date = normalizeDateStr(t.end_date);
+          });
           this.setCachedTrips(res.trips);
           return res.trips;
         }
@@ -162,12 +227,14 @@ window.TripSync.api = {
 
   async loadTrip(tripId) {
     // 1. Return cached trip details immediately if available (0ms instant render)
-    const cached = this.getCachedTrip(tripId);
+    let cached = this.getCachedTrip(tripId);
     if (cached && cached.info) {
+      cached = normalizeTrip(cached);
       // In background, refresh from server silently
       if (window.TripSync.config && window.TripSync.config.SCRIPT_URL) {
         this.request('trip', { id: tripId }).then(res => {
           if (res && res.info) {
+            normalizeTrip(res);
             this.setCachedTrip(tripId, res);
             if (window.TripSync.state.currentTripId === tripId) {
               window.TripSync.state.currentTrip = res;
@@ -189,6 +256,7 @@ window.TripSync.api = {
       try {
         const res = await this.request('trip', { id: tripId });
         if (res && res.info) {
+          normalizeTrip(res);
           this.setCachedTrip(tripId, res);
           return res;
         }

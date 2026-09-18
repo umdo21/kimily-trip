@@ -498,8 +498,11 @@ window.TripSync.getCurrentDayItems = function() {
   const seenKeys = new Set();
   let items = [];
   (trip.itinerary || []).forEach(item => {
-    if (item.date !== currentDateStr) return;
-    const dedupeKey = item.id || `${item.date}_${item.start_time}_${item.title}`;
+    const itemDate = (window.TripSync.api && window.TripSync.api.normalizeDateStr) 
+      ? window.TripSync.api.normalizeDateStr(item.date) 
+      : (item.date ? String(item.date).split('T')[0] : '');
+    if (itemDate !== currentDateStr) return;
+    const dedupeKey = item.id || `${itemDate}_${item.start_time}_${item.title}`;
     if (!seenKeys.has(dedupeKey)) {
       seenKeys.add(dedupeKey);
       items.push(item);

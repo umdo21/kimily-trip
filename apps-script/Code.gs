@@ -90,6 +90,7 @@ function getSheetData(sheetName) {
   
   var dataRange = sheet.getDataRange();
   var values = dataRange.getValues();
+  var displayValues = dataRange.getDisplayValues();
   if (values.length <= 1) return []; // 헤더만 있는 경우
   
   var headers = values[0];
@@ -97,10 +98,18 @@ function getSheetData(sheetName) {
   
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
+    var displayRow = displayValues[i];
     var obj = {};
     for (var j = 0; j < headers.length; j++) {
-      if (headers[j] !== "") {
-        obj[headers[j]] = row[j];
+      var header = headers[j];
+      if (header !== "") {
+        var rawVal = row[j];
+        // 날짜/시간 셀인 경우 시트에 표시된 텍스트(YYYY-MM-DD, HH:mm 등) 그대로 반환
+        if (rawVal instanceof Date) {
+          obj[header] = displayRow[j];
+        } else {
+          obj[header] = rawVal;
+        }
       }
     }
     result.push(obj);

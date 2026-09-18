@@ -133,11 +133,14 @@ window.TripSync.timeline = {
           ${actualInfoHtml}
           
           <div class="card-actions no-print">
+            <button class="btn-card-action" title="일정 세부 정보 수정 (링크, 시간, 메모 등)" onclick="TripSync.editor.showEditModal('${item.id}')">✏️ 수정</button>
             ${(item.lat && item.lng) ? `
               <button class="btn-card-action" title="동선 지도에서 위치 보기" onclick="TripSync.map.focusMarker('${item.id}')">📍 위치</button>
               <button class="btn-card-action" title="구글 지도 앱에서 열기" onclick="TripSync.map.openInMaps(${item.lat}, ${item.lng}, '${item.title.replace(/'/g, "\\'")}')">🗺️ 구글맵</button>
               <button class="btn-card-action btn-amap" title="중국 고덕지도(高德地图)로 열기" onclick="TripSync.map.openInAmap(${item.lat}, ${item.lng}, '${item.title.replace(/'/g, "\\'")}')">🇨🇳 고덕지도</button>
-            ` : ''}
+            ` : (item.google_maps_link ? `
+              <a class="btn-card-action" href="${item.google_maps_link}" target="_blank" title="구글맵 링크 열기">🗺️ 지도링크</a>
+            ` : '')}
             <button class="btn-card-action" title="iOS 캘린더 알림 다운로드" onclick="TripSync.calendar.downloadItem('${item.id}')">📅 캘린더</button>
             ${item.booking_link ? `<a class="btn-card-action" href="${item.booking_link}" target="_blank" title="예약 페이지 열기">🔗 예약</a>` : ''}
             <button class="btn-card-action btn-add-photo" onclick="TripSync.photos.showUploadModal('${item.id}')" title="가족 사진 추가">📸 사진</button>
@@ -148,9 +151,10 @@ window.TripSync.timeline = {
         
         <div class="edit-actions" style="display: ${window.TripSync.state.editMode ? 'flex' : 'none'};">
           <button class="btn-edit-action drag-handle" title="드래그하여 순서 변경">☰ 순서</button>
+          <button class="btn-edit-action btn-edit-details" onclick="TripSync.editor.showEditModal('${item.id}')" title="세부 정보 수정">✏️ 수정</button>
           <button class="btn-edit-action btn-visited" onclick="TripSync.editor.markVisited('${item.id}')">✅ 완료</button>
           <button class="btn-edit-action btn-skipped" onclick="TripSync.editor.markSkipped('${item.id}')">⏭️ 스킵</button>
-          <button class="btn-edit-action btn-changed" onclick="TripSync.editor.showChangeModal('${item.id}')">🔄 변경</button>
+          <button class="btn-edit-action btn-changed" onclick="TripSync.editor.showChangeModal('${item.id}')" title="다른 장소로 대체">🔄 대체</button>
           <button class="btn-edit-action btn-delete" onclick="TripSync.editor.deleteItem('${item.id}')">🗑️</button>
         </div>
       `;
