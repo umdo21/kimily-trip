@@ -1,3 +1,6 @@
+window.TripSync = window.TripSync || {};
+window.KimilyTrip = window.TripSync;
+
 function normalizeDateStr(dateVal) {
   if (!dateVal) return '';
   if (typeof dateVal === 'string') {
