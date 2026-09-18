@@ -594,14 +594,14 @@ window.TripSync.editor = {
         sort_order: (trip.itinerary || []).length + 1
       };
       
-      // Save locally first
-      if (!trip.itinerary) trip.itinerary = [];
-      trip.itinerary.push(newItem);
-      
-      if (typeof window.TripSync.api.addItem === 'function' && window.TripSync.config.SCRIPT_URL) {
+      // Save via API (optimistic update handles memory & cache)
+      if (typeof window.TripSync.api.addItem === 'function') {
         window.TripSync.api.addItem(newItem).catch(e => {
           console.warn('Backend addItem failed or offline, saved locally', e);
         });
+      } else {
+        if (!trip.itinerary) trip.itinerary = [];
+        trip.itinerary.push(newItem);
       }
       
       window.TripSync.hideModal();

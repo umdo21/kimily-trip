@@ -199,43 +199,103 @@ window.TripSync.timeline = {
     
     let html = '';
     
-    // Render Flights
-    if (trip.flights && trip.flights.length > 0) {
-      html += '<div class="summary-card flights-summary" style="background:#fff; border-radius:8px; padding:16px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,0.05);"><h4 style="margin-bottom:12px; color:#2d3748;">✈️ 항공편</h4><ul style="list-style:none; padding:0; margin:0;">';
-      trip.flights.forEach(f => {
+    // 1. Gather all flights (from trip.flights + itinerary flight items)
+    const flightsList = [...(trip.flights || [])];
+    const seenFlightTitles = new Set(flightsList.map(f => `${f.dep_airport}_${f.arr_airport}_${f.dep_datetime}`));
+    
+    (trip.itinerary || []).forEach(item => {
+      if (item.category === 'flight') {
+        const key = `${item.title}_${item.date}_${item.start_time}`;
+        if (!seenFlightTitles.has(key)) {
+          seenFlightTitles.add(key);
+          flightsList.push({
+            dep_airport: item.title,
+            arr_airport: '',
+            airline: item.notes || '',
+            flight_no: '',
+            dep_datetime: `${item.date} ${item.start_time}`,
+            arr_datetime: `${item.date} ${item.end_time}`,
+            booking_ref: item.booking_link || ''
+          });
+        }
+      }
+    });
+
+    if (flightsList.length > 0) {
+      html += '<div class="summary-card flights-summary" style="background:#fff; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06);"><h4 style="margin-bottom:14px; color:#2d3748; font-size:1.1rem; display:flex; align-items:center; gap:8px;">✈️ 항공편 정보</h4><ul style="list-style:none; padding:0; margin:0;">';
+      flightsList.forEach(f => {
         const dep = f.dep_airport || f.departure_airport || '';
         const arr = f.arr_airport || f.arrival_airport || '';
+        const routeText = arr ? `${dep} ➔ ${arr}` : dep;
         const depTime = f.dep_datetime || f.departure_time || '';
         const arrTime = f.arr_datetime || f.arrival_time || '';
         const airlineInfo = [f.airline, f.flight_no].filter(Boolean).join(' ');
         
         html += `
-          <li style="padding: 10px 0; border-bottom: 1px solid #edf2f7;">
-            <strong>${dep} ➔ ${arr}</strong> ${airlineInfo ? `(${airlineInfo})` : ''}<br>
-            <span style="font-size: 0.85rem; color: #718096;">출발: ${depTime} | 도착: ${arrTime}</span>
-            ${f.booking_ref ? `<br><span style="font-size:0.8rem; color:#4a5568;">예약번호: ${f.booking_ref}</span>` : ''}
+          <li style="padding: 12px 0; border-bottom: 1px solid #edf2f7;">
+            <strong style="font-size:1rem; color:#2d3748;">${routeText}</strong> ${airlineInfo ? `<span style="color:#4A90D9; font-weight:600;">(${airlineInfo})</span>` : ''}<br>
+            <span style="font-size: 0.85rem; color: #718096;">출발: ${depTime} ${arrTime ? `| 도착: ${arrTime}` : ''}</span>
+            ${f.booking_ref ? `<br><span style="font-size:0.8rem; color:#4a5568;">예약/참고: ${f.booking_ref.startsWith('http') ? `<a href="${f.booking_ref}" target="_blank" rel="noopener">예약 링크 열기 ↗</a>` : f.booking_ref}</span>` : ''}
           </li>
         `;
       });
       html += '</ul></div>';
     }
     
-    // Render Accommodations
-    if (trip.accommodations && trip.accommodations.length > 0) {
-      html += '<div class="summary-card accom-summary" style="background:#fff; border-radius:8px; padding:16px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,0.05);"><h4 style="margin-bottom:12px; color:#2d3748;">🏨 숙소</h4><ul style="list-style:none; padding:0; margin:0;">';
-      trip.accommodations.forEach(a => {
+    // 2. Gather all accommodations (from trip.accommodations + itinerary accommodation items)
+    const accomList = [...(trip.accommodations || [])];
+    const seenAccomNames = new Set(accomList.map(a => `${a.name}_${a.check_in}`));
+    
+    (trip.itinerary || []).forEach(item => {
+      if (item.category === 'accommodation') {
+        const key = `${item.title}_${item.date}`;
+        if (!seenAccomNames.has(key)) {
+          seenAccomNames.add(key);
+          accomList.push({
+            name: item.title,
+            check_in: `${item.date} ${item.start_time}`,
+            check_out: `${item.date} ${item.end_time}`,
+            address: item.address || item.description || '',
+            lat: item.lat,
+            lng: item.lng,
+            booking_link: item.booking_link || '',
+            phone: '',
+            notes: item.notes || item.description || ''
+          });
+        }
+      }
+    });
+
+    if (accomList.length > 0) {
+      html += '<div class="summary-card accom-summary" style="background:#fff; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06);"><h4 style="margin-bottom:14px; color:#2d3748; font-size:1.1rem; display:flex; align-items:center; gap:8px;">🏨 숙소 정보</h4><ul style="list-style:none; padding:0; margin:0;">';
+      accomList.forEach(a => {
         html += `
-          <li style="padding: 10px 0; border-bottom: 1px solid #edf2f7;">
-            <strong style="font-size: 1rem; color: #2d3748;">${a.name}</strong><br>
-            <span style="font-size: 0.85rem; color: #718096;">체크인: ${a.check_in} | 체크아웃: ${a.check_out}</span><br>
-            ${a.address ? `📍 <a href="#" style="font-size:0.85rem; color:#4A90D9; text-decoration:none;" onclick="TripSync.map.openInMaps(${a.lat}, ${a.lng}, '${a.name}'); return false;">${a.address}</a>` : ''}
-            ${a.phone ? `<br><span style="font-size:0.8rem; color:#718096;">📞 전화: ${a.phone}</span>` : ''}
+          <li style="padding: 14px 0; border-bottom: 1px solid #edf2f7;">
+            <strong style="font-size: 1.05rem; color: #2d3748;">${a.name}</strong><br>
+            <span style="font-size: 0.85rem; color: #718096; display:inline-block; margin-top:4px;">체크인: ${a.check_in || '-'} ${a.check_out ? `| 체크아웃: ${a.check_out}` : ''}</span><br>
+            ${a.address ? `<span style="font-size:0.85rem; color:#4a5568; display:inline-block; margin-top:4px;">📍 ${a.lat && a.lng ? `<a href="#" style="color:#4A90D9; text-decoration:none;" onclick="TripSync.map.openInMaps(${a.lat}, ${a.lng}, '${a.name}'); return false;">${a.address} (지도보기)</a>` : a.address}</span><br>` : ''}
+            ${a.phone ? `<span style="font-size:0.8rem; color:#718096;">📞 전화: ${a.phone}</span><br>` : ''}
+            ${a.booking_link ? `<span style="font-size:0.8rem;"><a href="${a.booking_link}" target="_blank" rel="noopener" style="color:#4A90D9;">예약 페이지 바로가기 ↗</a></span>` : ''}
           </li>
         `;
       });
       html += '</ul></div>';
     }
     
+    // 3. Empty State if none
+    if (!html) {
+      html = `
+        <div class="summary-empty-card" style="background:#fff; border-radius:16px; padding:40px 20px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-top:12px;">
+          <div style="font-size:3rem; margin-bottom:16px;">🏨 ✈️</div>
+          <h4 style="margin-bottom:8px; color:#2d3748; font-size:1.2rem; font-weight:700;">등록된 항공편이나 숙소 정보가 없습니다</h4>
+          <p style="color:#718096; font-size:0.95rem; margin-bottom:20px; max-width:400px; margin-left:auto; margin-right:auto;">
+            우측 상단의 <strong>➕ 추가</strong> 버튼을 눌러 숙소(호텔)나 항공편 일정을 등록해보세요!
+          </p>
+          <button class="btn-primary" onclick="TripSync.editor.showAddModal()" style="padding:10px 22px; font-size:0.95rem;">➕ 새 숙소/항공 추가하기</button>
+        </div>
+      `;
+    }
+
     summarySection.innerHTML = html;
   }
 };

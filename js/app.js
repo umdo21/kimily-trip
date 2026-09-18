@@ -494,9 +494,16 @@ window.TripSync.getCurrentDayItems = function() {
   targetDate.setDate(targetDate.getDate() + (window.TripSync.state.currentDay || 0));
   const currentDateStr = formatLocalDate(targetDate);
   
-  // Filter itinerary by matching date
-  let items = (trip.itinerary || []).filter(item => {
-    return item.date === currentDateStr;
+  // Filter itinerary by matching date with deduplication
+  const seenKeys = new Set();
+  let items = [];
+  (trip.itinerary || []).forEach(item => {
+    if (item.date !== currentDateStr) return;
+    const dedupeKey = item.id || `${item.date}_${item.start_time}_${item.title}`;
+    if (!seenKeys.has(dedupeKey)) {
+      seenKeys.add(dedupeKey);
+      items.push(item);
+    }
   });
   
   // Sort by start_time, then sort_order

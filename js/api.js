@@ -489,9 +489,16 @@ window.TripSync.api = {
   async addItem(item) {
     // 1. Optimistic Update: Add to memory & local cache immediately
     const trip = window.TripSync.state.currentTrip;
-    if (trip && trip.itinerary) {
+    if (trip) {
+      if (!trip.itinerary) trip.itinerary = [];
       if (!item.id) item.id = 'itm_' + Date.now();
-      trip.itinerary.push(item);
+      
+      // Prevent duplicate push
+      const alreadyExists = trip.itinerary.some(existing => String(existing.id) === String(item.id));
+      if (!alreadyExists) {
+        trip.itinerary.push(item);
+      }
+      
       const tripId = (trip.info && trip.info.trip_id) || window.TripSync.state.currentTripId;
       if (tripId) this.setCachedTrip(tripId, trip);
     }
