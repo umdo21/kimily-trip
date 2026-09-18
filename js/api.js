@@ -61,7 +61,7 @@ window.TripSync.api = {
     });
   },
 
-  async request(action, params = {}, method = 'GET', body = null, timeoutMs = 4500) {
+  async request(action, params = {}, method = 'GET', body = null, timeoutMs = 15000) {
     const config = window.TripSync.config || {};
     if (!config.SCRIPT_URL) throw new Error("SCRIPT_URL is missing");
     
@@ -70,9 +70,12 @@ window.TripSync.api = {
       const urlParams = new URLSearchParams({ action, ...params });
       return this.jsonp(`${config.SCRIPT_URL}?${urlParams.toString()}`, timeoutMs);
     } else {
-      // POST requests via fetch with AbortController timeout
+      // POST requests via fetch with AbortController timeout (Apps Script needs 10-15s for sheet writes)
       const urlParams = new URLSearchParams({ action, ...params });
       const url = `${config.SCRIPT_URL}?${urlParams.toString()}`;
+      
+      // Include action explicitly in POST body to guarantee parsing in Apps Script doPost
+      const payload = Object.assign({ action: action }, params, body || {});
       
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -80,7 +83,7 @@ window.TripSync.api = {
       try {
         const response = await fetch(url, {
           method: 'POST',
-          body: JSON.stringify(body),
+          body: JSON.stringify(payload),
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           redirect: 'follow',
           signal: controller.signal
@@ -447,9 +450,18 @@ window.TripSync.api = {
 
     // 2. Dispatch to backend in background
     if (window.TripSync.config && window.TripSync.config.SCRIPT_URL) {
-      this.request('addTrip', {}, 'POST', newTrip).catch(e => {
-        console.warn('Backend addTrip failed, saved locally:', e);
-      });
+      this.request('addTrip', {}, 'POST', newTrip)
+        .then(() => {
+          if (window.TripSync.showToast) {
+            window.TripSync.showToast('✅ 구글 시트에 새 여행이 동기화되었습니다!', 'success');
+          }
+        })
+        .catch(e => {
+          console.warn('Backend addTrip failed, saved locally:', e);
+          if (window.TripSync.showToast) {
+            window.TripSync.showToast('⚠️ 구글 시트 저장 실패 (로컬에만 저장됨)', 'warning');
+          }
+        });
     }
 
     return { success: true, trip: newTrip };
