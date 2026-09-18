@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Kimily Trip - 우리 가족 여행 플래너</title>
+  
+  <meta name="theme-color" content="#3182F6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <!-- Pretendard Font -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/print.css" media="print">
+  
+  <!-- SortableJS -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="header">
+      <div class="header-inner">
+        <h1 class="logo" onclick="window.location.hash='#/'" style="cursor:pointer;" title="홈으로">
+          <span class="logo-emoji">✈️</span>
+          <span class="logo-text">Kimily Trip</span>
+        </h1>
+        <div class="header-right">
+          <div class="trip-selector-wrapper">
+            <select id="trip-selector" title="여행 선택"></select>
+          </div>
+          <span id="trip-status-badge" class="badge"></span>
+          <button class="btn-header-action no-print" onclick="TripSync.print.preparePrint()" title="여행기록 인쇄 / PDF 출력">
+            <span class="btn-icon-symbol">🖨️</span>
+            <span class="btn-text">인쇄</span>
+          </button>
+          <button class="btn-header-action btn-add-primary no-print" onclick="TripSync.editor.showAddModal()" title="새 일정 추가">
+            <span class="btn-icon-symbol">➕</span>
+            <span class="btn-text">추가</span>
+          </button>
+          <button class="btn-header-icon-only no-print" onclick="TripSync.showSettings()" title="설정 (구글 시트 연동)">⚙️</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Sub-navigation: Mode Switcher -->
+    <div id="view-mode-bar" class="view-mode-bar no-print">
+      <button id="btn-view-timeline" class="mode-tab active" onclick="TripSync.switchView('timeline')">⏰ 일정 & 동선</button>
+      <button id="btn-view-gallery" class="mode-tab" onclick="TripSync.switchView('gallery')">📸 사진 갤러리</button>
+      <button id="btn-view-summary" class="mode-tab" onclick="TripSync.switchView('summary')">📋 항공·숙소 정보</button>
+    </div>
+
+    <!-- Day Tabs -->
+    <nav id="day-tabs" class="day-tabs-container no-print"></nav>
+
+    <!-- Main Content -->
+    <main id="main-content">
+      <!-- Timeline Section -->
+      <section id="timeline-section"></section>
+      
+      <!-- Map Section -->
+      <section id="map-section">
+        <div id="map-canvas"></div>
+      </section>
+
+      <!-- Photo Gallery (memory mode) -->
+      <section id="gallery-section" style="display:none;"></section>
+
+      <!-- Summary (flights, accommodations) -->
+      <section id="summary-section" style="display:none;"></section>
+    </main>
+
+    <!-- Print-only header -->
+    <div id="print-header" class="print-only"></div>
+
+    <!-- FAB -->
+    <div id="fab" class="no-print"></div>
+
+    <!-- Modal -->
+    <div id="modal-overlay" class="modal">
+      <div id="modal-content" class="modal-body"></div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <!-- Loading -->
+    <div id="loading-spinner"></div>
+
+    <!-- Empty State -->
+    <div id="empty-state" style="display:none;">
+      <p style="font-size: 1.2rem; font-weight: bold; margin-bottom: 8px;">📋 등록된 여행이 없습니다</p>
+      <p style="color: #64748B; margin-bottom: 16px;">Google Sheets에 여행 정보를 입력하거나, 샘플 여행을 불러와보세요.</p>
+      <button class="btn-primary" onclick="TripSync.loadSampleTrip()">✨ Kimily Trip 샘플 여행 둘러보기</button>
+    </div>
+  </div>
+
+  <!-- Core Scripts in Dependency Order -->
+  <script src="js/api.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/photos.js"></script>
+  <script src="js/print.js"></script>
+  <script src="js/timeline.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/app.js"></script>
+  
+  <!-- Conditional Google Maps script loader -->
+  <script>
+    (function() {
+      const mapsKey = localStorage.getItem('KimilyTrip_MAPS_API_KEY') || localStorage.getItem('TripSync_MAPS_API_KEY') || '';
+      if (mapsKey && mapsKey !== 'YOUR_API_KEY') {
+        const script = document.createElement('script');
+        script.async = true;
+        script.defer = true;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsKey)}&callback=initMap`;
+        document.head.appendChild(script);
+      }
+    })();
+
+    function initMap() {
+      if (window.TripSync && window.TripSync.map && typeof window.TripSync.map.init === 'function') {
+        window.TripSync.map.init();
+      }
+    }
+  </script>
+</body>
+</html>

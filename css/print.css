@@ -1,0 +1,66 @@
+@media print {
+  body {
+    background: white;
+    color: black;
+    font-size: 12pt;
+    margin: 0;
+    padding: 0;
+  }
+  
+  #header,
+  #day-tabs,
+  #fab,
+  #modal-overlay,
+  #toast,
+  #loading-spinner,
+  #map-section,
+  .edit-actions,
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+
+  #main-content {
+    padding: 0;
+    display: block;
+  }
+
+  #timeline-section {
+    padding: 0;
+    width: 100%;
+  }
+
+  .timeline-card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+    page-break-inside: avoid;
+    margin-bottom: 10px;
+    border-left-width: 4px; /* Keep category color indicator slightly */
+  }
+
+  .timeline-connector {
+    display: none;
+  }
+
+  .card-photos {
+    display: block;
+  }
+  
+  .photo-thumb {
+    max-width: 150px;
+    height: auto;
+    display: inline-block;
+  }
+
+  /* Page break per day can be achieved by injecting a class during printing if needed */
+  .page-break {
+    page-break-before: always;
+  }
+  
+  @page {
+    margin: 2cm;
+  }
+}
