@@ -206,21 +206,21 @@ window.TripSync.showNewTripModal = function() {
         <input type="text" id="new_trip_dest" placeholder="예: 베트남 다낭" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
       </div>
 
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div class="form-row-2col mobile-stack-date-cat">
         <div>
           <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">시작일 *</label>
-          <input type="date" id="new_trip_start" value="${defaultStart}" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.92rem;">
+          <input type="date" id="new_trip_start" value="${defaultStart}" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.92rem; box-sizing:border-box;">
         </div>
         <div>
           <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">종료일 *</label>
-          <input type="date" id="new_trip_end" value="${defaultEnd}" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.92rem;">
+          <input type="date" id="new_trip_end" value="${defaultEnd}" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.92rem; box-sizing:border-box;">
         </div>
       </div>
 
-      <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:12px; margin-bottom:14px;">
+      <div class="form-row-2col mobile-stack-date-cat">
         <div>
           <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">대표 이모지</label>
-          <select id="new_trip_emoji" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+          <select id="new_trip_emoji" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; box-sizing:border-box;">
             <option value="✈️">✈️ 비행기</option>
             <option value="🇻🇳">🇻🇳 베트남</option>
             <option value="🇯🇵">🇯🇵 일본</option>
@@ -234,7 +234,7 @@ window.TripSync.showNewTripModal = function() {
         </div>
         <div>
           <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">통화 단위</label>
-          <select id="new_trip_currency" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+          <select id="new_trip_currency" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; box-sizing:border-box;">
             <option value="KRW">KRW (원)</option>
             <option value="JPY">JPY (엔)</option>
             <option value="USD">USD (달러)</option>
@@ -477,7 +477,7 @@ window.TripSync.switchView = function(viewName, updateHash = true) {
     if (mobileSubviewBar) mobileSubviewBar.style.display = 'none';
     if (timelineSection) timelineSection.style.display = 'none';
     if (mapSection) mapSection.style.display = 'none';
-    if (gallerySection) gallerySection.style.display = 'grid';
+    if (gallerySection) gallerySection.style.display = 'block';
     if (summarySection) summarySection.style.display = 'none';
     
     if (window.TripSync.photos && window.TripSync.photos.renderGallery) {

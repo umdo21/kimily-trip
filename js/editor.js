@@ -447,14 +447,14 @@ window.TripSync.editor = {
           <div id="smart_parse_result" class="smart-parse-feedback" style="display:none;"></div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:12px; margin-bottom:12px;">
+        <div class="form-row-2col mobile-stack-date-cat">
           <div>
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">날짜</label>
-            <input type="date" id="add_date" value="${defaultDate}" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.92rem;">
+            <input type="date" id="add_date" value="${defaultDate}" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.92rem; box-sizing:border-box;">
           </div>
           <div>
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">카테고리</label>
-            <select id="add_category" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.92rem;">
+            <select id="add_category" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.92rem; box-sizing:border-box;">
               <option value="restaurant">🍽️ 식사</option>
               <option value="attraction" selected>🏛️ 관광</option>
               <option value="cafe">☕ 카페</option>
@@ -467,35 +467,35 @@ window.TripSync.editor = {
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div class="form-row-2col">
           <div>
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">시작 시간 *</label>
-            <input type="time" id="add_start" value="10:00" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+            <input type="time" id="add_start" value="10:00" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; box-sizing:border-box;">
           </div>
           <div>
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">종료 시간 *</label>
-            <input type="time" id="add_end" value="11:30" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+            <input type="time" id="add_end" value="11:30" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; box-sizing:border-box;">
           </div>
         </div>
 
         <div style="margin-bottom:12px;">
           <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">장소 이름 *</label>
-          <input type="text" id="add_title" placeholder="예: 오사카성, 이치란 라멘" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+          <input type="text" id="add_title" placeholder="예: 오사카성, 이치란 라멘" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; box-sizing:border-box;">
         </div>
 
         <div style="margin-bottom:12px;">
           <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">구글맵 링크 / 주소</label>
-          <input type="url" id="add_link" placeholder="https://maps.app.goo.gl/..." style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.9rem;">
+          <input type="url" id="add_link" placeholder="https://maps.app.goo.gl/..." style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.9rem; box-sizing:border-box;">
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div class="form-row-2col">
           <div>
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">예상 예산 (${currencyUnit})</label>
-            <input type="number" id="add_budget" value="0" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+            <input type="number" id="add_budget" value="0" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; box-sizing:border-box;">
           </div>
           <div>
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">아이콘 이모지</label>
-            <input type="text" id="add_icon" placeholder="예: 🏯, 🍜" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; text-align:center;">
+            <input type="text" id="add_icon" placeholder="예: 🏯, 🍜" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; text-align:center; box-sizing:border-box;">
           </div>
         </div>
 
@@ -654,59 +654,59 @@ window.TripSync.editor = {
           <div id="edit_smart_feedback" class="smart-parse-feedback" style="display:none;"></div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div class="form-row-2col mobile-stack-date-cat">
           <div>
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">날짜 *</label>
-            <input type="date" id="edit_date" value="${item.date || ''}" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+            <input type="date" id="edit_date" value="${item.date || ''}" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; box-sizing:border-box;">
           </div>
           <div>
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">카테고리 *</label>
-            <select id="edit_category" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+            <select id="edit_category" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; box-sizing:border-box;">
               ${categoryOptions}
             </select>
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div class="form-row-2col">
           <div>
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">시작 시간</label>
-            <input type="time" id="edit_start" value="${item.start_time || ''}" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+            <input type="time" id="edit_start" value="${item.start_time || ''}" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; box-sizing:border-box;">
           </div>
           <div>
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">종료 시간</label>
-            <input type="time" id="edit_end" value="${item.end_time || ''}" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+            <input type="time" id="edit_end" value="${item.end_time || ''}" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; box-sizing:border-box;">
           </div>
         </div>
 
         <div style="margin-bottom:12px;">
           <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">장소 / 일정 이름 *</label>
-          <input type="text" id="edit_title" value="${(item.title || '').replace(/"/g, '&quot;')}" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+          <input type="text" id="edit_title" value="${(item.title || '').replace(/"/g, '&quot;')}" required style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; box-sizing:border-box;">
         </div>
 
         <div style="margin-bottom:12px;">
           <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">구글맵 링크 / 주소</label>
-          <input type="url" id="edit_link" value="${(item.google_maps_link || item.address || '').replace(/"/g, '&quot;')}" placeholder="https://maps.app.goo.gl/..." style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.9rem;">
+          <input type="url" id="edit_link" value="${(item.google_maps_link || item.address || '').replace(/"/g, '&quot;')}" placeholder="https://maps.app.goo.gl/..." style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.9rem; box-sizing:border-box;">
         </div>
 
         <div style="margin-bottom:12px;">
           <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">예약 페이지 링크</label>
-          <input type="url" id="edit_booking_link" value="${(item.booking_link || '').replace(/"/g, '&quot;')}" placeholder="https://..." style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.9rem;">
+          <input type="url" id="edit_booking_link" value="${(item.booking_link || '').replace(/"/g, '&quot;')}" placeholder="https://..." style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.9rem; box-sizing:border-box;">
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div class="form-row-2col">
           <div>
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">예상 예산 (${currencyUnit})</label>
-            <input type="number" id="edit_budget" value="${item.budget || 0}" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem;">
+            <input type="number" id="edit_budget" value="${item.budget || 0}" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; box-sizing:border-box;">
           </div>
           <div>
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">아이콘 이모지</label>
-            <input type="text" id="edit_icon" value="${item.icon || ''}" placeholder="예: 🏯, 🍜" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; text-align:center;">
+            <input type="text" id="edit_icon" value="${item.icon || ''}" placeholder="예: 🏯, 🍜" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.95rem; text-align:center; box-sizing:border-box;">
           </div>
         </div>
 
         <div style="margin-bottom:20px;">
           <label style="display:block; font-size:0.82rem; font-weight:700; color:#334155; margin-bottom:4px;">메모 / 세부 정보</label>
-          <textarea id="edit_desc" rows="2" placeholder="예약번호, 찾아가는 길, 가족 팁 등" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.9rem; resize:vertical;">${item.description || item.notes || ''}</textarea>
+          <textarea id="edit_desc" rows="2" placeholder="예약번호, 찾아가는 길, 가족 팁 등" style="width:100%; padding:10px; border:1px solid #CBD5E1; border-radius:10px; font-size:0.9rem; resize:vertical; box-sizing:border-box;">${item.description || item.notes || ''}</textarea>
         </div>
 
         <div style="display:flex; gap:10px;">

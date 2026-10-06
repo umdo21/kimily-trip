@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tripsync-v3';
+const CACHE_NAME = 'tripsync-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

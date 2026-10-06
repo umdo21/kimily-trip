@@ -498,12 +498,50 @@ body.view-summary #main-content {
   padding-top: 130px;
 }
 
+/* ==========================================================================
+   Tab View Isolation Rules (일정&동선 / 사진 갤러리 / 항공·숙소 정보 완벽 격리)
+   ========================================================================== */
+
+/* 1. Timeline View Active */
+body.view-timeline #gallery-section,
+body.view-timeline #summary-section {
+  display: none !important;
+}
+
+/* 2. Photo Gallery View Active */
+body.view-gallery #timeline-section,
+body.view-gallery #map-section,
+body.view-gallery #day-tabs,
+body.view-gallery .mobile-subview-bar,
+body.view-gallery #summary-section,
+body.view-gallery #fab {
+  display: none !important;
+}
+body.view-gallery #gallery-section {
+  display: block !important;
+  width: 100%;
+}
+
+/* 3. Flight & Stay Summary View Active */
+body.view-summary #timeline-section,
+body.view-summary #map-section,
+body.view-summary #day-tabs,
+body.view-summary .mobile-subview-bar,
+body.view-summary #gallery-section,
+body.view-summary #fab {
+  display: none !important;
+}
+body.view-summary #summary-section {
+  display: block !important;
+  width: 100%;
+}
+
 @media (min-width: 1024px) {
   .mobile-subview-bar {
     display: none !important;
   }
   
-  #main-content {
+  body.view-timeline #main-content {
     display: grid;
     grid-template-columns: minmax(480px, 1.2fr) minmax(380px, 1fr);
     gap: 28px;
@@ -512,12 +550,19 @@ body.view-summary #main-content {
     align-items: start;
   }
 
-  #timeline-section {
+  body.view-gallery #main-content,
+  body.view-summary #main-content {
+    display: block;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  body.view-timeline #timeline-section {
     min-width: 0;
     display: block !important;
   }
 
-  #map-section {
+  body.view-timeline #map-section {
     display: block !important;
     position: sticky;
     top: 172px;
@@ -544,16 +589,16 @@ body.view-summary #main-content {
     padding: 0 16px 24px 16px;
   }
 
-  body.mobile-list-active #timeline-section {
+  body.view-timeline.mobile-list-active #timeline-section {
     display: block !important;
   }
-  body.mobile-list-active #map-section {
+  body.view-timeline.mobile-list-active #map-section {
     display: none !important;
   }
-  body.mobile-map-active #timeline-section {
+  body.view-timeline.mobile-map-active #timeline-section {
     display: none !important;
   }
-  body.mobile-map-active #map-section {
+  body.view-timeline.mobile-map-active #map-section {
     display: block !important;
   }
 }
@@ -1409,6 +1454,51 @@ body.view-summary #main-content {
   100% { opacity: 1; transform: scale(1); }
 }
 
+/* Modal Form Layouts & Mobile Stacking */
+.form-row-2col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.form-row-2col > div {
+  min-width: 0;
+  width: 100%;
+}
+
+.form-row-2col input,
+.form-row-2col select,
+.form-row-2col textarea {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 540px) {
+  .form-row-2col.mobile-stack-date-cat,
+  .form-row-2col.mobile-stack-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.modal-body input,
+.modal-body select,
+.modal-body textarea {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.modal-body input[type="date"],
+.modal-body input[type="time"],
+.modal-body select {
+  height: 44px;
+}
+
 /* Toast */
 #toast {
   position: fixed;
@@ -1988,12 +2078,12 @@ body.view-summary #main-content {
     padding-top: 130px;
   }
 
-  #timeline-section {
+  body.view-timeline #timeline-section {
     min-width: 0;
     display: block !important;
   }
 
-  #map-section {
+  body.view-timeline #map-section {
     display: block !important;
     position: sticky;
     top: 180px;
