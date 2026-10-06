@@ -176,7 +176,7 @@ window.TripSync.map = {
       const displayTitle = isChanged ? (item.actual_title || item.title) : item.title;
       
       stepsHtml += `
-        <div class="route-step-item" onclick="TripSync.map.focusTimelineCard('${item.id}')">
+        <div class="route-step-item" data-id="${item.id}" onclick="TripSync.map.focusTimelineCard('${item.id}')">
           <div class="route-step-badge" style="background:${badgeColor};">${idx + 1}</div>
           <div class="route-step-info">
             <div class="route-step-header">
@@ -223,25 +223,45 @@ window.TripSync.map = {
   },
   
   focusTimelineCard(itemId) {
-    const card = document.querySelector(`.timeline-card[data-id="${itemId}"]`);
-    if (card) {
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      card.classList.add('highlight-pulse');
-      setTimeout(() => { card.classList.remove('highlight-pulse'); }, 1800);
+    if (window.innerWidth < 1024 && typeof window.TripSync.setMobileTimelineView === 'function') {
+      window.TripSync.setMobileTimelineView('list');
     }
+    setTimeout(() => {
+      const card = document.querySelector(`.timeline-card[data-id="${itemId}"]`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('highlight-pulse');
+        setTimeout(() => { card.classList.remove('highlight-pulse'); }, 1800);
+      }
+    }, 60);
   },
   
   focusMarker(itemId) {
+    if (window.innerWidth < 1024 && typeof window.TripSync.setMobileTimelineView === 'function') {
+      window.TripSync.setMobileTimelineView('map');
+    }
+
     if (this._map) {
       const marker = this._markers.find(m => String(m._itemId) === String(itemId));
       if (marker) {
-        this._map.panTo(marker.getPosition());
-        this._map.setZoom(16);
-        google.maps.event.trigger(marker, 'click');
+        setTimeout(() => {
+          this._map.panTo(marker.getPosition());
+          this._map.setZoom(16);
+          google.maps.event.trigger(marker, 'click');
+        }, 120);
         return;
       }
     }
-    this.focusTimelineCard(itemId);
+    
+    // Fallback: visual route step focus
+    setTimeout(() => {
+      const routeStep = document.querySelector(`.route-step-item[data-id="${itemId}"]`);
+      if (routeStep) {
+        routeStep.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        routeStep.classList.add('highlight-pulse');
+        setTimeout(() => { routeStep.classList.remove('highlight-pulse'); }, 1800);
+      }
+    }, 120);
   },
   
   openInMaps(lat, lng, title) {

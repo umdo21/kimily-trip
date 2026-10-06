@@ -15,6 +15,7 @@ window.TripSync.state = window.TripSync.state || {
   currentTrip: null,
   currentDay: 0,
   currentView: 'timeline', // 'timeline' | 'gallery' | 'summary'
+  mobileTimelineView: 'list', // 'list' | 'map' (for mobile screen toggle)
   editMode: false,
   viewMode: 'plan', // 'plan' | 'memory' | 'ongoing'
   loading: false,
@@ -36,20 +37,26 @@ window.TripSync.setLoading = function(loading) {
   if (spinner) spinner.classList.toggle('active', loading);
 };
 
-window.TripSync.showModal = function(htmlContent) {
+window.TripSync.showModal = function(htmlContent, options = {}) {
   const overlay = document.getElementById('modal-overlay');
   const content = document.getElementById('modal-content');
   if (!overlay || !content) return;
+  
+  const isLightbox = options.lightbox || false;
+  overlay.className = isLightbox ? 'modal active modal-lightbox' : 'modal active';
+
   content.innerHTML = `
-    <button onclick="TripSync.hideModal()" style="position:absolute; top:16px; right:16px; background:#F1F5F9; border:none; width:32px; height:32px; border-radius:50%; font-size:16px; cursor:pointer; color:#64748B; display:flex; align-items:center; justify-content:center; transition:background 0.2s;" title="닫기">✕</button>
+    <div class="modal-handle-bar no-print"></div>
+    <button onclick="TripSync.hideModal()" class="btn-modal-close no-print" title="닫기">✕</button>
     ${htmlContent}
   `;
-  overlay.classList.add('active');
+  document.body.classList.add('modal-open');
 };
 
 window.TripSync.hideModal = function() {
   const overlay = document.getElementById('modal-overlay');
-  if (overlay) overlay.classList.remove('active');
+  if (overlay) overlay.className = 'modal';
+  document.body.classList.remove('modal-open');
 };
 
 async function init() {
@@ -98,6 +105,16 @@ async function init() {
   
   // Setup FAB
   setupFab();
+  
+  // Close modal when tapping on dark backdrop outside modal content
+  const overlay = document.getElementById('modal-overlay');
+  if (overlay) {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        window.TripSync.hideModal();
+      }
+    });
+  }
   
   // Notice only once if using demo mode without configured SCRIPT_URL
   if (!window.TripSync.config.SCRIPT_URL && !localStorage.getItem('KimilyTrip_demo_notified')) {
@@ -360,12 +377,64 @@ function onTripChange(tripId) {
   window.location.hash = `#/${tripId}/day/0`;
 }
 
+window.TripSync.setMobileTimelineView = function(view) {
+  window.TripSync.state.mobileTimelineView = view;
+  
+  const btnList = document.getElementById('btn-subview-list');
+  const btnMap = document.getElementById('btn-subview-map');
+  const timelineSection = document.getElementById('timeline-section');
+  const mapSection = document.getElementById('map-section');
+  
+  if (btnList && btnMap) {
+    btnList.classList.toggle('active', view === 'list');
+    btnMap.classList.toggle('active', view === 'map');
+  }
+  
+  if (view === 'list') {
+    document.body.classList.remove('mobile-map-active');
+    document.body.classList.add('mobile-list-active');
+    if (timelineSection) timelineSection.classList.remove('mobile-hidden');
+    if (mapSection) mapSection.classList.add('mobile-hidden');
+  } else {
+    document.body.classList.remove('mobile-list-active');
+    document.body.classList.add('mobile-map-active');
+    if (timelineSection) timelineSection.classList.add('mobile-hidden');
+    if (mapSection) mapSection.classList.remove('mobile-hidden');
+    
+    // Resize map when switched to map view on mobile
+    if (window.TripSync.map) {
+      if (window.TripSync.map._map && typeof google !== 'undefined' && google.maps) {
+        google.maps.event.trigger(window.TripSync.map._map, 'resize');
+      } else {
+        window.TripSync.map.renderVisualRoute();
+      }
+    }
+  }
+};
+
 window.TripSync.onDayChange = function(dayIndex) {
+  window.TripSync.state.currentDay = dayIndex;
   window.location.hash = `#/${window.TripSync.state.currentTripId}/day/${dayIndex}`;
+  
+  const tabsContainer = document.getElementById('day-tabs');
+  if (tabsContainer) {
+    tabsContainer.querySelectorAll('.day-tab').forEach(t => {
+      const idx = parseInt(t.getAttribute('data-day'), 10);
+      t.classList.toggle('active', idx === dayIndex);
+    });
+    const activeTab = tabsContainer.querySelector(`.day-tab[data-day="${dayIndex}"]`);
+    if (activeTab) {
+      activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }
 };
 
 window.TripSync.switchView = function(viewName, updateHash = true) {
   window.TripSync.state.currentView = viewName;
+  
+  // Set body view state class for CSS safe area & layout
+  document.body.classList.remove('view-timeline', 'view-gallery', 'view-summary');
+  document.body.classList.add(`view-${viewName}`);
   
   // Update view mode tabs active state
   document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
@@ -377,15 +446,22 @@ window.TripSync.switchView = function(viewName, updateHash = true) {
   const gallerySection = document.getElementById('gallery-section');
   const summarySection = document.getElementById('summary-section');
   const dayTabs = document.getElementById('day-tabs');
+  const mobileSubviewBar = document.getElementById('mobile-subview-bar');
   const mainContent = document.getElementById('main-content');
+  
+  // Clear inline paddingTop so CSS responsive rules & safe area insets apply cleanly
+  if (mainContent) mainContent.style.paddingTop = '';
   
   if (viewName === 'timeline') {
     if (dayTabs) dayTabs.style.display = 'flex';
+    if (mobileSubviewBar) mobileSubviewBar.style.display = '';
     if (timelineSection) timelineSection.style.display = 'block';
     if (mapSection) mapSection.style.display = 'block';
     if (gallerySection) gallerySection.style.display = 'none';
     if (summarySection) summarySection.style.display = 'none';
-    if (mainContent) mainContent.style.paddingTop = '165px';
+    
+    // Restore current mobile subview state
+    window.TripSync.setMobileTimelineView(window.TripSync.state.mobileTimelineView || 'list');
     
     if (window.TripSync.timeline && window.TripSync.timeline.render) {
       window.TripSync.timeline.render();
@@ -398,11 +474,11 @@ window.TripSync.switchView = function(viewName, updateHash = true) {
     }
   } else if (viewName === 'gallery') {
     if (dayTabs) dayTabs.style.display = 'none';
+    if (mobileSubviewBar) mobileSubviewBar.style.display = 'none';
     if (timelineSection) timelineSection.style.display = 'none';
     if (mapSection) mapSection.style.display = 'none';
     if (gallerySection) gallerySection.style.display = 'grid';
     if (summarySection) summarySection.style.display = 'none';
-    if (mainContent) mainContent.style.paddingTop = '115px';
     
     if (window.TripSync.photos && window.TripSync.photos.renderGallery) {
       window.TripSync.photos.renderGallery();
@@ -412,11 +488,11 @@ window.TripSync.switchView = function(viewName, updateHash = true) {
     }
   } else if (viewName === 'summary') {
     if (dayTabs) dayTabs.style.display = 'none';
+    if (mobileSubviewBar) mobileSubviewBar.style.display = 'none';
     if (timelineSection) timelineSection.style.display = 'none';
     if (mapSection) mapSection.style.display = 'none';
     if (gallerySection) gallerySection.style.display = 'none';
     if (summarySection) summarySection.style.display = 'block';
-    if (mainContent) mainContent.style.paddingTop = '115px';
     
     if (window.TripSync.timeline && window.TripSync.timeline.renderSummary) {
       window.TripSync.timeline.renderSummary();
@@ -457,9 +533,17 @@ function renderDayTabs(startDateStr, endDateStr) {
     d.setDate(d.getDate() + i);
     const dateDisplay = `${d.getMonth() + 1}/${d.getDate()} (${daysKor[d.getDay()]})`;
     const isActive = i === window.TripSync.state.currentDay ? 'active' : '';
-    html += `<button class="day-tab ${isActive}" onclick="TripSync.onDayChange(${i})">Day ${i + 1} · ${dateDisplay}</button>`;
+    html += `<button class="day-tab ${isActive}" data-day="${i}" onclick="TripSync.onDayChange(${i})">Day ${i + 1} · ${dateDisplay}</button>`;
   }
   tabsContainer.innerHTML = html;
+
+  // Auto-scroll the active tab into center view on mobile
+  setTimeout(() => {
+    const activeTab = tabsContainer.querySelector('.day-tab.active');
+    if (activeTab) {
+      activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, 50);
 }
 
 function renderStatusBadge(status) {

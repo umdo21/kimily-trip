@@ -287,6 +287,6 @@ window.TripSync.photos = {
       </div>
     `;
     
-    window.TripSync.showModal(html);
+    window.TripSync.showModal(html, { lightbox: true });
   }
 };

@@ -33,6 +33,13 @@ window.TripSync.timeline = {
     
     const trip = window.TripSync.state.currentTrip;
     const currencyUnit = (trip && trip.info && trip.info.currency === 'JPY') ? '엔' : '원';
+    const isChina = (trip && trip.info && (/중국|china|상하이|베이징|청두|광저우/i.test(trip.info.destination || '')));
+    
+    const validCount = items.filter(i => i.status !== 'deleted').length;
+    const countBadge = document.getElementById('subview-count-badge');
+    if (countBadge) {
+      countBadge.textContent = String(validCount);
+    }
     
     if (items.length === 0) {
       container.innerHTML = `
@@ -135,9 +142,9 @@ window.TripSync.timeline = {
           <div class="card-actions no-print">
             <button class="btn-card-action" title="일정 세부 정보 수정 (링크, 시간, 메모 등)" onclick="TripSync.editor.showEditModal('${item.id}')">✏️ 수정</button>
             ${(item.lat && item.lng) ? `
-              <button class="btn-card-action" title="동선 지도에서 위치 보기" onclick="TripSync.map.focusMarker('${item.id}')">📍 위치</button>
-              <button class="btn-card-action" title="구글 지도 앱에서 열기" onclick="TripSync.map.openInMaps(${item.lat}, ${item.lng}, '${item.title.replace(/'/g, "\\'")}')">🗺️ 구글맵</button>
-              <button class="btn-card-action btn-amap" title="중국 고덕지도(高德地图)로 열기" onclick="TripSync.map.openInAmap(${item.lat}, ${item.lng}, '${item.title.replace(/'/g, "\\'")}')">🇨🇳 고덕지도</button>
+              <button class="btn-card-action btn-location-primary" title="동선 지도에서 위치 보기" onclick="TripSync.map.focusMarker('${item.id}')">📍 지도</button>
+              <button class="btn-card-action" title="구글 지도 앱에서 길찾기 / 장소 열기" onclick="TripSync.map.openInMaps(${item.lat}, ${item.lng}, '${item.title.replace(/'/g, "\\'")}')">🗺️ 구글맵</button>
+              ${isChina ? `<button class="btn-card-action btn-amap" title="중국 고덕지도(高德地图)로 열기" onclick="TripSync.map.openInAmap(${item.lat}, ${item.lng}, '${item.title.replace(/'/g, "\\'")}')">🇨🇳 고덕지도</button>` : ''}
             ` : (item.google_maps_link ? `
               <a class="btn-card-action" href="${item.google_maps_link}" target="_blank" title="구글맵 링크 열기">🗺️ 지도링크</a>
             ` : '')}
